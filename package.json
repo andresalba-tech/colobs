@@ -1,0 +1,25 @@
+{
+  "name": "colobs",
+  "version": "0.1.0",
+  "description": "Observatorio Colombiano del Mercado Laboral Tecnologico",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:conn": "tsx scripts/test_maton_connection.ts",
+    "test:jobs": "tsx scripts/test_linkedin_jobs.ts"
+  },
+  "keywords": [
+    "observatorio",
+    "tech-jobs",
+    "colombia",
+    "market-intelligence"
+  ],
+  "author": "Andres Alba",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
