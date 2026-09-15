@@ -1,0 +1,17 @@
+{
+  "errorDetailType": "com.linkedin.common.error.BadRequest",
+  "message": "Invalid param. Please see errorDetails for more information.",
+  "errorDetails": {
+    "inputErrors": [
+      {
+        "input": {
+          "inputPath": {
+            "fieldPath": "country"
+          }
+        },
+        "code": "QUERY_PARAM_NOT_ALLOWED"
+      }
+    ]
+  },
+  "status": 400
+}

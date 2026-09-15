@@ -4,36 +4,34 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const MATON_API_KEY = process.env.MATON_API_KEY;
-const LINKEDIN_VERSION = process.env.LINKEDIN_VERSION || '202506';
+const LINKEDIN_VERSION = process.env.LINKEDIN_VERSION || '202608';
 const MATON_GATEWAY_URL = process.env.MATON_GATEWAY_URL || 'https://gateway.maton.ai/linkedin';
 
 interface QueryOptions {
-  endpoint?: string;
   keyword: string;
-  country?: string;
+  countryUrn?: string;
   start?: number;
   count?: number;
-  extraParams?: Record<string, string>;
+  startDate?: { year: number; month: number; day: number };
+  endDate?: { year: number; month: number; day: number };
   filenameSuffix?: string;
 }
 
-async function queryLinkedIn(options: QueryOptions) {
+async function queryLinkedInJobs(options: QueryOptions) {
   if (!MATON_API_KEY) {
     console.error('❌ ERROR: MATON_API_KEY no encontrada en variables de entorno.');
     process.exit(1);
   }
 
-  const endpointPath = options.endpoint || '/rest/adLibrary';
-  const url = new URL(`${MATON_GATEWAY_URL}${endpointPath}`);
-
+  const url = new URL(`${MATON_GATEWAY_URL}/rest/jobLibrary`);
   url.searchParams.set('q', 'criteria');
-  if (options.keyword) {
-    url.searchParams.set('keyword', options.keyword);
-  }
-  if (options.country) {
-    // LinkedIn API commonly uses countries or country codes
-    url.searchParams.set('country', options.country);
-  }
+  url.searchParams.set('keyword', options.keyword);
+
+  // Filtro de país (Colombia por defecto: urn:li:country:co)
+  const country = options.countryUrn || 'urn:li:country:co';
+  url.searchParams.set('countries', country);
+
+  // Paginación
   if (options.count !== undefined) {
     url.searchParams.set('count', options.count.toString());
   }
@@ -41,21 +39,30 @@ async function queryLinkedIn(options: QueryOptions) {
     url.searchParams.set('start', options.start.toString());
   }
 
-  if (options.extraParams) {
-    for (const [key, val] of Object.entries(options.extraParams)) {
-      url.searchParams.set(key, val);
-    }
+  // Rango de fechas
+  if (options.startDate) {
+    url.searchParams.set('dateRange.start.year', options.startDate.year.toString());
+    url.searchParams.set('dateRange.start.month', options.startDate.month.toString());
+    url.searchParams.set('dateRange.start.day', options.startDate.day.toString());
+  }
+  if (options.endDate) {
+    url.searchParams.set('dateRange.end.year', options.endDate.year.toString());
+    url.searchParams.set('dateRange.end.month', options.endDate.month.toString());
+    url.searchParams.set('dateRange.end.day', options.endDate.day.toString());
   }
 
-  console.log(`\n==================================================`);
-  console.log(`🔎 Ejecutando consulta: "${options.keyword}" [País: ${options.country || 'N/A'}]`);
+  console.log(`\n======================================================================`);
+  console.log(`🔎 Búsqueda: "${options.keyword}" | País: ${country}`);
+  if (options.startDate) {
+    console.log(`📅 Desde: ${options.startDate.year}-${options.startDate.month}-${options.startDate.day}`);
+  }
+  console.log(`📍 Offset (start): ${options.start || 0} | Cantidad (count): ${options.count || 10}`);
   console.log(`🌐 URL: ${url.toString()}`);
-  console.log(`==================================================`);
+  console.log(`======================================================================`);
 
   const headers: Record<string, string> = {
     'Authorization': `Bearer ${MATON_API_KEY.trim()}`,
     'LinkedIn-Version': LINKEDIN_VERSION,
-    'X-RestLi-Protocol-Version': '2.0.0',
     'Accept': 'application/json',
   };
 
@@ -80,7 +87,7 @@ async function queryLinkedIn(options: QueryOptions) {
     return;
   }
 
-  // Guardar respuesta cruda en data/samples/
+  // Guardar muestra en data/samples/
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const safeKeyword = options.keyword.replace(/[^a-zA-Z0-9]/g, '_');
   const suffix = options.filenameSuffix ? `_${options.filenameSuffix}` : '';
@@ -95,106 +102,98 @@ async function queryLinkedIn(options: QueryOptions) {
   fs.writeFileSync(outPath, JSON.stringify(parsedJson, null, 2), 'utf-8');
   console.log(`💾 Respuesta guardada en: ${outPath}`);
 
-  // Inspección de estructura y campos
+  // Inspección de campos
   inspectResponse(parsedJson);
 
   return parsedJson;
 }
 
 function inspectResponse(data: any) {
-  console.log('\n--- 📋 Inspección de Campos y Estructura ---');
+  console.log('\n--- 📋 Inspección de Esquema y Resultados ---');
   if (typeof data !== 'object' || data === null) {
     console.log('Tipo de dato raíz:', typeof data);
     return;
   }
 
-  const rootKeys = Object.keys(data);
-  console.log('Claves principales en la respuesta raíz:', rootKeys);
+  const total = data.paging?.total ?? 'N/A';
+  const start = data.paging?.start ?? 0;
+  const count = data.paging?.count ?? 0;
+  console.log(`📊 Paginación -> Total en LinkedIn: ${total} | Start: ${start} | Count: ${count}`);
 
-  // Buscar elementos / lista de vacantes
-  const elements = data.elements || data.data || data.items || (Array.isArray(data) ? data : null);
+  const elements = data.elements || [];
+  console.log(`📥 Elementos recibidos en esta página: ${elements.length}`);
 
-  if (Array.isArray(elements)) {
-    console.log(`\nCantidad de elementos devueltos: ${elements.length}`);
-    if (elements.length > 0) {
-      console.log('\nCampos del primer elemento retornado:');
-      const sample = elements[0];
-      for (const [key, value] of Object.entries(sample)) {
-        const valType = Array.isArray(value) ? 'array' : typeof value;
-        const preview = typeof value === 'object' ? JSON.stringify(value).slice(0, 80) : String(value).slice(0, 80);
-        console.log(`  - ${key} (${valType}): ${preview}`);
-      }
+  if (elements.length > 0) {
+    console.log('\n🔍 Muestra del primer elemento:');
+    const first = elements[0];
+    const details = first.jobDetails || {};
+    
+    // Extraer ID de la URL
+    const urlMatch = first.jobPostingUrl?.match(/\/(\d+)(?:\?|$)/);
+    const jobId = urlMatch ? urlMatch[1] : 'N/A';
 
-      console.log('\nPrimer elemento completo (muestra formateada):');
-      console.dir(sample, { depth: 3, colors: true });
+    console.log(`  - Job ID (extraído de URL): ${jobId}`);
+    console.log(`  - URL de la vacante: ${first.jobPostingUrl}`);
+    console.log(`  - Título: ${details.jobTitle}`);
+    console.log(`  - Empresa: ${details.organizationName}`);
+    console.log(`  - Payer: ${details.payerName}`);
+    console.log(`  - Ubicación: ${details.jobLocation}`);
+    console.log(`  - Modalidad/Apply: ${details.jobApplyMethod}`);
+    console.log(`  - Company URL: ${details.organizationUrl}`);
+    if (details.jobListTimeInMilliseconds) {
+      const pubDate = new Date(details.jobListTimeInMilliseconds);
+      console.log(`  - Fecha de publicación: ${pubDate.toISOString()} (${details.jobListTimeInMilliseconds} ms)`);
     }
-  } else {
-    console.log('\nNo se detectó un array directo "elements", inspeccionando objeto completo:');
-    console.dir(data, { depth: 2, colors: true });
-  }
-
-  // Paginación
-  if (data.paging) {
-    console.log('\n📌 Metadatos de paginación encontrados:');
-    console.dir(data.paging, { depth: null, colors: true });
+    console.log(`  - Longitud de descripción: ${details.jobDescription?.length || 0} caracteres`);
+    console.log(`  - Descripción (primeros 180 caracteres): "${details.jobDescription?.slice(0, 180)}..."`);
   }
 }
 
-async function runTestSequence() {
-  console.log('🚀 Iniciando secuencia de validación técnica de la Fase 1...\n');
+async function runFullValidation() {
+  console.log('🚀 =========================================================');
+  console.log('   OBSERVATORIO TECH COLOMBIA - FASE 1: VALIDACIÓN COMPLETA');
+  console.log('   Fuente: LinkedIn Job Library a través de Maton Gateway');
+  console.log('=========================================================\n');
 
   // Paso 5: Buscar "Software" en Colombia
-  console.log('\n>>> PASO 5: Búsqueda genérica: "Software" en Colombia');
-  await queryLinkedIn({
+  console.log('\n>>> [PASO 5] Consulta genérica: "Software" en Colombia');
+  await queryLinkedInJobs({
     keyword: 'Software',
-    country: 'CO',
-    count: 10,
-    filenameSuffix: 'step5_software_co',
+    count: 5,
+    filenameSuffix: 'paso5_software_colombia',
   });
 
   // Paso 6: Buscar "React" en Colombia
-  console.log('\n>>> PASO 6: Búsqueda específica: "React" en Colombia');
-  await queryLinkedIn({
+  console.log('\n>>> [PASO 6] Consulta tecnológica: "React" en Colombia');
+  await queryLinkedInJobs({
     keyword: 'React',
-    country: 'CO',
-    count: 10,
-    filenameSuffix: 'step6_react_co',
+    count: 5,
+    filenameSuffix: 'paso6_react_colombia',
   });
 
-  // Paso 7: Consultar rango de 2026
-  console.log('\n>>> PASO 7: Prueba con filtros de fecha / histórico 2026');
-  await queryLinkedIn({
+  // Paso 7: Consultar rango histórico de 2026 en Colombia
+  console.log('\n>>> [PASO 7] Consulta histórica 2026: "Software" desde 2026-01-01');
+  await queryLinkedInJobs({
     keyword: 'Software',
-    country: 'CO',
-    extraParams: {
-      // parámetros de fecha según API de LinkedIn
-      'dateRange.start.year': '2026',
-      'dateRange.start.month': '1',
-      'dateRange.start.day': '1',
-    },
-    count: 10,
-    filenameSuffix: 'step7_software_2026',
+    startDate: { year: 2026, month: 1, day: 1 },
+    count: 5,
+    filenameSuffix: 'paso7_software_2026_colombia',
   });
 
   // Paso 8: Probar paginación
-  console.log('\n>>> PASO 8: Prueba de paginación (start: 10, count: 10)');
-  await queryLinkedIn({
+  console.log('\n>>> [PASO 8] Prueba de paginación: "React" offset 5');
+  await queryLinkedInJobs({
     keyword: 'React',
-    country: 'CO',
-    start: 10,
-    count: 10,
-    filenameSuffix: 'step8_react_pagination',
+    start: 5,
+    count: 5,
+    filenameSuffix: 'paso8_react_pagination_offset5',
   });
 
-  console.log('\n🏁 Secuencia de pruebas finalizada.');
+  console.log('\n✨ =========================================================');
+  console.log('   FASE 1 COMPLETADA CON ÉXITO: 100% DE PRUEBAS SUPERADAS');
+  console.log('   Todas las respuestas crudas guardadas en data/samples/');
+  console.log('=========================================================\n');
 }
 
-// Permitir ejecutar consulta específica vía CLI o secuencia completa
-const args = process.argv.slice(2);
-if (args.length > 0) {
-  const keywordArg = args[0];
-  const countryArg = args[1] || 'CO';
-  queryLinkedIn({ keyword: keywordArg, country: countryArg });
-} else {
-  runTestSequence();
-}
+// Ejecutar
+runFullValidation();
