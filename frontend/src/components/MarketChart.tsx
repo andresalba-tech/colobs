@@ -10,6 +10,7 @@ import {
   Legend,
 } from 'recharts';
 import { TimelineDataPoint, Technology, MetricType } from '../types';
+import { Zap, TrendingUp } from 'lucide-react';
 
 interface MarketChartProps {
   data: TimelineDataPoint[];
@@ -77,7 +78,7 @@ export const MarketChart: React.FC<MarketChartProps> = ({
             >
               <span style={{ fontWeight: 500 }}>{getTechName(entry.dataKey)}:</span>
               <span style={{ fontWeight: 700 }}>
-                {entry.value} {metric === 'new' ? 'nuevas' : 'activas'}
+                {entry.value} {metric === 'new' ? 'nuevas ese día' : 'activas en el mercado'}
               </span>
             </div>
           ))}
@@ -94,20 +95,51 @@ export const MarketChart: React.FC<MarketChartProps> = ({
         marginBottom: '1.75rem',
         padding: '1.5rem 1.5rem 1.75rem 1rem',
         position: 'relative',
-        minHeight: '420px',
+        minHeight: '440px',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      <div style={{ paddingLeft: '0.75rem', marginBottom: '1rem' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
-          Evolución Temporal de la Demanda
-        </h2>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          {metric === 'new'
-            ? 'Ofertas promocionadas que comenzaron publicación por día'
-            : 'Volumen acumulado observable de ofertas'}
-        </span>
+      <div style={{ paddingLeft: '0.75rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              Evolución Temporal de la Demanda
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+              Comparación visual del comportamiento del mercado tecnológico en Colombia.
+            </p>
+          </div>
+
+          {/* Banner explicativo del modo activo */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: metric === 'new' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(168, 85, 247, 0.12)',
+              border: `1px solid ${metric === 'new' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(168, 85, 247, 0.25)'}`,
+              color: metric === 'new' ? '#38bdf8' : '#c084fc',
+              padding: '0.4rem 0.85rem',
+              borderRadius: '8px',
+              fontSize: '0.78rem',
+              fontWeight: 500,
+            }}
+          >
+            {metric === 'new' ? <Zap size={14} /> : <TrendingUp size={14} />}
+            <span>
+              {metric === 'new' ? (
+                <>
+                  <strong>Modo Ritmo Diario:</strong> Mide vacantes <u>nuevas</u> publicadas cada día (picos de contratación).
+                </>
+              ) : (
+                <>
+                  <strong>Modo Mercado Activo:</strong> Mide el volumen <u>acumulado</u> de vacantes abiertas vigentes (tamaño total de la demanda).
+                </>
+              )}
+            </span>
+          </div>
+        </div>
       </div>
 
       {isLoading && (

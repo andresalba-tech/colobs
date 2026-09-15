@@ -83,7 +83,7 @@ export const Controls: React.FC<ControlsProps> = ({
             }}
           >
             <Layers size={15} color="var(--primary)" />
-            Comparar Series (Máximo 3)
+            Comparar Series (Máximo 3 simultáneas)
           </span>
 
           {selectedSlugs.length < 3 && (
@@ -197,7 +197,7 @@ export const Controls: React.FC<ControlsProps> = ({
           borderTop: '1px solid var(--border-color)',
         }}
       >
-        {/* Selector de Métrica */}
+        {/* Selector de Métrica con Explicación Clara */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
           <span
             style={{
@@ -222,31 +222,47 @@ export const Controls: React.FC<ControlsProps> = ({
           >
             <button
               onClick={() => onChangeMetric('new')}
+              title="Muestra cuántas vacantes nuevas se publicaron ese día (ritmo de contratación)"
               style={{
-                padding: '0.35rem 0.85rem',
+                padding: '0.4rem 0.85rem',
                 borderRadius: '6px',
                 fontSize: '0.8rem',
                 fontWeight: 600,
                 background: selectedMetric === 'new' ? 'var(--primary)' : 'transparent',
                 color: selectedMetric === 'new' ? '#fff' : 'var(--text-muted)',
                 transition: 'all 0.15s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                lineHeight: 1.2,
               }}
             >
-              Nuevas por día
+              <span>Nuevas por día</span>
+              <span style={{ fontSize: '0.68rem', opacity: 0.8, fontWeight: 400 }}>
+                (Ritmo / Flujo diario)
+              </span>
             </button>
             <button
               onClick={() => onChangeMetric('active')}
+              title="Muestra el total acumulado de vacantes abiertas vigentes (tamaño observable de la demanda)"
               style={{
-                padding: '0.35rem 0.85rem',
+                padding: '0.4rem 0.85rem',
                 borderRadius: '6px',
                 fontSize: '0.8rem',
                 fontWeight: 600,
                 background: selectedMetric === 'active' ? 'var(--primary)' : 'transparent',
                 color: selectedMetric === 'active' ? '#fff' : 'var(--text-muted)',
                 transition: 'all 0.15s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                lineHeight: 1.2,
               }}
             >
-              Activas acumuladas
+              <span>Activas acumuladas</span>
+              <span style={{ fontSize: '0.68rem', opacity: 0.8, fontWeight: 400 }}>
+                (Tamaño del mercado)
+              </span>
             </button>
           </div>
         </div>
@@ -279,7 +295,7 @@ export const Controls: React.FC<ControlsProps> = ({
                 key={opt.days}
                 onClick={() => onChangePeriod(opt.days)}
                 style={{
-                  padding: '0.35rem 0.75rem',
+                  padding: '0.4rem 0.75rem',
                   borderRadius: '6px',
                   fontSize: '0.8rem',
                   fontWeight: 600,

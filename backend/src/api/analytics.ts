@@ -20,6 +20,8 @@ export function getAvailableSeries() {
 
 /**
  * Retorna las métricas temporales diarias para hasta 3 series seleccionadas
+ * - metric = 'new': Vacantes cuya publicación inició en esa fecha específica (Flujo / Ritmo).
+ * - metric = 'active': Total acumulado de vacantes abiertas y vigentes en el mercado hasta esa fecha (Stock / Tamaño).
  */
 export function getTimelineData(
   slugs: string[],
@@ -28,18 +30,7 @@ export function getTimelineData(
 ): TimelineDataPoint[] {
   if (slugs.length === 0) return [];
 
-  // Calcular fecha de inicio en base a `days`
-  // Si no hay suficientes días recientes, tomamos las fechas presentes en la BD
-  const dateLimitQuery = db.prepare(`
-    SELECT MIN(published_date) as min_date, MAX(published_date) as max_date
-    FROM jobs
-  `).get() as { min_date: string | null; max_date: string | null };
-
-  if (!dateLimitQuery.min_date || !dateLimitQuery.max_date) {
-    return [];
-  }
-
-  // Obtener todas las fechas distintas en orden cronológico
+  // Obtener todas las fechas distintas en orden cronológico en el rango solicitado
   const dates = db.prepare(`
     SELECT DISTINCT published_date
     FROM jobs
@@ -48,8 +39,9 @@ export function getTimelineData(
   `).all(days) as Array<{ published_date: string }>;
 
   const dateList = dates.map((d) => d.published_date);
+  if (dateList.length === 0) return [];
 
-  // Mapear series
+  // Mapear slugs a IDs de tecnología
   const techMap = new Map<string, number>();
   for (const slug of slugs) {
     const tech = db.prepare('SELECT id FROM technologies WHERE slug = ?').get(slug) as any;
@@ -58,12 +50,20 @@ export function getTimelineData(
     }
   }
 
-  // Query para contar vacantes por fecha y tecnología
-  const countsStmt = db.prepare(`
-    SELECT j.published_date, COUNT(DISTINCT j.id) as count
+  // Consulta para Nuevas por día (flujo exacto en esa fecha)
+  const newCountsStmt = db.prepare(`
+    SELECT COUNT(DISTINCT j.id) as count
     FROM jobs j
     JOIN job_technologies jt ON j.id = jt.job_id
     WHERE jt.technology_id = ? AND j.published_date = ?
+  `);
+
+  // Consulta para Activas acumuladas (suma acumulada de vacantes abiertas hasta esa fecha)
+  const activeCumulativeStmt = db.prepare(`
+    SELECT COUNT(DISTINCT j.id) as count
+    FROM jobs j
+    JOIN job_technologies jt ON j.id = jt.job_id
+    WHERE jt.technology_id = ? AND j.published_date <= ? AND j.is_active = 1
   `);
 
   const result: TimelineDataPoint[] = [];
@@ -71,8 +71,13 @@ export function getTimelineData(
   for (const date of dateList) {
     const point: TimelineDataPoint = { date };
     for (const [slug, techId] of techMap.entries()) {
-      const row = countsStmt.get(techId, date) as { count: number };
-      point[slug] = row ? row.count : 0;
+      if (metric === 'active') {
+        const row = activeCumulativeStmt.get(techId, date) as { count: number };
+        point[slug] = row ? row.count : 0;
+      } else {
+        const row = newCountsStmt.get(techId, date) as { count: number };
+        point[slug] = row ? row.count : 0;
+      }
     }
     result.push(point);
   }
