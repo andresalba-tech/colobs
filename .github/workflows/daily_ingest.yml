@@ -1,0 +1,35 @@
+name: Daily Tech Job Ingestion (Colombia)
+
+on:
+  schedule:
+    # Ejecutar todos los días a las 05:00 UTC (00:00 medianoche hora de Colombia)
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Permite ejecución manual con un clic desde GitHub Actions
+
+jobs:
+  ingest:
+    name: Ingest and Classify Jobs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run Ingestion
+        working-directory: backend
+        env:
+          MATON_API_KEY: ${{ secrets.MATON_API_KEY }}
+          MATON_GATEWAY_URL: ${{ secrets.MATON_GATEWAY_URL || 'https://gateway.maton.ai/linkedin' }}
+          LINKEDIN_VERSION: '202608'
+        run: npm run ingest
