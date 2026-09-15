@@ -11,7 +11,7 @@ export interface SeriesSummary {
   category: string;
   totalActive: number;
   newInPeriod: number;
-  changePercent: number; // Porcentaje de cambio frente al periodo previo
+  changePercent: number;
 }
 
 export function getAvailableSeries() {
@@ -19,9 +19,9 @@ export function getAvailableSeries() {
 }
 
 /**
- * Retorna las métricas temporales diarias para hasta 3 series seleccionadas
- * - metric = 'new': Vacantes cuya publicación inició en esa fecha específica (Flujo / Ritmo).
- * - metric = 'active': Total acumulado de vacantes abiertas y vigentes en el mercado hasta esa fecha (Stock / Tamaño).
+ * Retorna las métricas temporales abarcando todo el período solicitado (7d, 30d, 90d, 180d, 365d)
+ * - metric = 'new': Vacantes cuya publicación inició en esa fecha/intervalo.
+ * - metric = 'active': Total acumulado de vacantes abiertas y vigentes en el mercado hasta esa fecha.
  */
 export function getTimelineData(
   slugs: string[],
@@ -30,16 +30,41 @@ export function getTimelineData(
 ): TimelineDataPoint[] {
   if (slugs.length === 0) return [];
 
-  // Obtener todas las fechas distintas en orden cronológico en el rango solicitado
-  const dates = db.prepare(`
-    SELECT DISTINCT published_date
-    FROM jobs
-    WHERE published_date >= date((SELECT MAX(published_date) FROM jobs), '-' || ? || ' days')
-    ORDER BY published_date ASC
-  `).all(days) as Array<{ published_date: string }>;
+  const maxDateRow = db.prepare('SELECT MAX(published_date) as max_date FROM jobs').get() as { max_date: string | null };
+  const maxDateStr = maxDateRow?.max_date || new Date().toISOString().slice(0, 10);
+  const maxDate = new Date(maxDateStr + 'T00:00:00Z');
 
-  const dateList = dates.map((d) => d.published_date);
-  if (dateList.length === 0) return [];
+  // Ajustar la resolución temporal según el período para mantener la gráfica legible
+  // 7 y 30 días: paso de 1 día
+  // 90 días: paso de 2 días
+  // 180 días (6 meses): paso de 3 días
+  // 365 días (1 año): paso de 5 días
+  const stepDays = days > 180 ? 5 : days > 90 ? 2 : 1;
+
+  interface DateInterval {
+    labelDate: string;
+    startDate: string;
+    endDate: string;
+  }
+
+  const intervals: DateInterval[] = [];
+
+  for (let i = days; i >= 0; i -= stepDays) {
+    const endOffset = i;
+    const startOffset = Math.min(days, i + stepDays - 1);
+
+    const dEnd = new Date(maxDate.getTime() - endOffset * 24 * 60 * 60 * 1000);
+    const dStart = new Date(maxDate.getTime() - startOffset * 24 * 60 * 60 * 1000);
+
+    const endDateStr = dEnd.toISOString().slice(0, 10);
+    const startDateStr = dStart.toISOString().slice(0, 10);
+
+    intervals.push({
+      labelDate: endDateStr,
+      startDate: startDateStr,
+      endDate: endDateStr,
+    });
+  }
 
   // Mapear slugs a IDs de tecnología
   const techMap = new Map<string, number>();
@@ -50,15 +75,15 @@ export function getTimelineData(
     }
   }
 
-  // Consulta para Nuevas por día (flujo exacto en esa fecha)
+  // Consulta para Nuevas en el intervalo
   const newCountsStmt = db.prepare(`
     SELECT COUNT(DISTINCT j.id) as count
     FROM jobs j
     JOIN job_technologies jt ON j.id = jt.job_id
-    WHERE jt.technology_id = ? AND j.published_date = ?
+    WHERE jt.technology_id = ? AND j.published_date >= ? AND j.published_date <= ?
   `);
 
-  // Consulta para Activas acumuladas (suma acumulada de vacantes abiertas hasta esa fecha)
+  // Consulta para Activas acumuladas hasta la fecha límite del intervalo
   const activeCumulativeStmt = db.prepare(`
     SELECT COUNT(DISTINCT j.id) as count
     FROM jobs j
@@ -68,17 +93,19 @@ export function getTimelineData(
 
   const result: TimelineDataPoint[] = [];
 
-  for (const date of dateList) {
-    const point: TimelineDataPoint = { date };
+  for (const interval of intervals) {
+    const point: TimelineDataPoint = { date: interval.labelDate };
+
     for (const [slug, techId] of techMap.entries()) {
       if (metric === 'active') {
-        const row = activeCumulativeStmt.get(techId, date) as { count: number };
+        const row = activeCumulativeStmt.get(techId, interval.endDate) as { count: number };
         point[slug] = row ? row.count : 0;
       } else {
-        const row = newCountsStmt.get(techId, date) as { count: number };
+        const row = newCountsStmt.get(techId, interval.startDate, interval.endDate) as { count: number };
         point[slug] = row ? row.count : 0;
       }
     }
+
     result.push(point);
   }
 
