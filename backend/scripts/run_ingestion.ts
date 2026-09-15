@@ -2,26 +2,41 @@ import { runIngestion } from '../src/ingestion/ingest';
 
 async function main() {
   const keywords = [
+    'Software',
     'React',
     'Python',
     'Java',
+    'JavaScript',
+    'TypeScript',
     'Node.js',
     'AI Engineer',
     'Full Stack',
     'Frontend',
-    'Software',
+    'Backend',
+    'Angular',
+    'Vue',
+    'Spring',
+    'FastAPI',
+    'Django',
+    'LLM',
+    'RAG',
+    'Agents',
+    '.NET',
   ];
 
-  // Iniciar lote con 2 páginas (hasta 20 vacantes por tecnología para verificación inicial rápida)
+  console.log('🌟 Iniciando carga histórica masiva para Colombia...');
+  console.log(`Palabras clave a consultar: ${keywords.length}`);
+  console.log('Configuración: 10 páginas x 24 vacantes por página (hasta 240 vacantes por tecnología)\n');
+
   await runIngestion({
     keywords,
-    maxPagesPerKeyword: 2,
-    pageSize: 10,
+    maxPagesPerKeyword: 10,
+    pageSize: 24,
     delayBetweenRequestsMs: 300,
   });
 }
 
 main().catch((err) => {
-  console.error('Error fatal en ingestión:', err);
+  console.error('Error fatal en ingestión masiva:', err);
   process.exit(1);
 });
