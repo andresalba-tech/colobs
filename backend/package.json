@@ -1,12 +1,15 @@
 {
-  "name": "colobs",
+  "name": "colobs-backend",
   "version": "0.1.0",
-  "description": "Observatorio Colombiano del Mercado Laboral Tecnologico",
+  "description": "Observatorio Colombiano del Mercado Laboral Tecnologico - Backend",
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "tsx src/api/server.ts",
     "test:conn": "tsx scripts/test_maton_connection.ts",
-    "test:jobs": "tsx scripts/test_linkedin_jobs.ts"
+    "test:jobs": "tsx scripts/test_linkedin_jobs.ts",
+    "test:classifier": "tsx scripts/test_classifier.ts",
+    "ingest": "tsx scripts/run_ingestion.ts"
   },
   "keywords": [
     "observatorio",
