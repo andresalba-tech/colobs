@@ -1,5 +1,6 @@
 interface Env {
   colobs_db: any;
+  ADMIN_API_KEY: string;
 }
 
 export default {
@@ -245,6 +246,176 @@ export default {
         }
 
         return Response.json({ summaries });
+        }
+
+    if (url.pathname === '/api/events' && request.method === 'POST') {
+        const data = await request.json() as {
+            event_type?: string;
+            series?: string;
+            period?: string | number;
+        };
+
+        await env.colobs_db
+            .prepare(`
+            INSERT INTO visitor_events (
+                event_type,
+                series_selected,
+                period_selected,
+                created_at
+            )
+            VALUES (?, ?, ?, ?)
+            `)
+            .bind(
+            data.event_type || 'comparison_view',
+            data.series || '',
+            String(data.period || ''),
+            new Date().toISOString()
+            )
+            .run();
+
+        return Response.json(
+            { success: true },
+            { status: 201 }
+        );
+        }
+
+    if (url.pathname === '/api/contact' && request.method === 'POST') {
+        const data = await request.json() as {
+            name?: string;
+            company?: string;
+            role?: string;
+            email?: string;
+            phone?: string;
+            country?: string;
+            comment?: string;
+            authorized?: boolean;
+        };
+
+        if (!data.name || !data.email) {
+            return Response.json(
+            { error: 'Nombre y email son obligatorios' },
+            { status: 400 }
+            );
+        }
+
+        if (data.authorized !== true) {
+            return Response.json(
+            { error: 'Se requiere autorización para almacenar los datos' },
+            { status: 400 }
+            );
+        }
+
+        await env.colobs_db
+            .prepare(`
+            INSERT INTO visitor_contacts (
+                name,
+                company,
+                role,
+                email,
+                phone,
+                country,
+                comment,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `)
+            .bind(
+            data.name,
+            data.company || '',
+            data.role || '',
+            data.email,
+            data.phone || '',
+            data.country || 'Colombia',
+            data.comment || '',
+            new Date().toISOString()
+            )
+            .run();
+
+        return Response.json(
+            {
+            success: true,
+            message: 'Contacto registrado correctamente'
+            },
+            { status: 201 }
+        );
+        }
+
+    if (url.pathname === '/api/admin/analytics' && request.method === 'GET') {
+        const authorization = request.headers.get('Authorization');
+
+        if (authorization !== `Bearer ${env.ADMIN_API_KEY}`) {
+            return Response.json(
+            { error: 'No autorizado' },
+            { status: 401 }
+            );
+        }
+
+        const totals = await env.colobs_db
+            .prepare(`
+            SELECT
+                COUNT(*) AS totalEvents,
+                SUM(
+                CASE
+                    WHEN datetime(created_at) >= datetime('now', '-30 days')
+                    THEN 1
+                    ELSE 0
+                END
+                ) AS eventsLast30Days
+            FROM visitor_events
+            `)
+            .first();
+
+        const contacts = await env.colobs_db
+            .prepare(`
+            SELECT
+                COUNT(*) AS totalContacts,
+                SUM(
+                CASE
+                    WHEN datetime(created_at) >= datetime('now', '-30 days')
+                    THEN 1
+                    ELSE 0
+                END
+                ) AS contactsLast30Days
+            FROM visitor_contacts
+            `)
+            .first();
+
+        const topComparisons = await env.colobs_db
+            .prepare(`
+            SELECT
+                series_selected AS series,
+                COUNT(*) AS count
+            FROM visitor_events
+            WHERE event_type = 'comparison_view'
+                AND series_selected <> ''
+            GROUP BY series_selected
+            ORDER BY count DESC
+            LIMIT 10
+            `)
+            .all();
+
+        const topPeriods = await env.colobs_db
+            .prepare(`
+            SELECT
+                period_selected AS period,
+                COUNT(*) AS count
+            FROM visitor_events
+            WHERE event_type = 'comparison_view'
+                AND period_selected <> ''
+            GROUP BY period_selected
+            ORDER BY count DESC
+            LIMIT 10
+            `)
+            .all();
+
+        return Response.json({
+            totalEvents: totals?.totalEvents ?? 0,
+            eventsLast30Days: totals?.eventsLast30Days ?? 0,
+            totalContacts: contacts?.totalContacts ?? 0,
+            contactsLast30Days: contacts?.contactsLast30Days ?? 0,
+            topComparisons: topComparisons.results,
+            topPeriods: topPeriods.results,
+        });
         }
 
     return Response.json(
