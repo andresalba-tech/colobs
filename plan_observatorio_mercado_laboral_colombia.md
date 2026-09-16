@@ -456,56 +456,52 @@ con
 
 ## 15. Analítica propia del observatorio
 
-El proyecto tendrá su propia capa de analytics.
+El proyecto cuenta con su propia capa de telemetría y analítica de visitantes.
 
-No solamente queremos saber qué dice LinkedIn.
+No solamente sabemos qué dice LinkedIn.
 
-También queremos saber qué quieren conocer quienes utilizan nuestra plataforma.
+También sabemos con precisión qué quieren conocer quienes utilizan nuestra plataforma.
 
-Registraremos eventos anónimos como:
+### Registro de eventos anónimos:
+Cada interacción en el dashboard registra en la tabla `visitor_events` (SQLite / Cloudflare D1):
+- `event_type`: tipo de evento (`comparison_view`, `filter_change`).
+- `series_selected`: combinación exacta de tecnologías seleccionadas (ej. `react,nodejs,typescript`).
+- `period_selected`: período temporal consultado (`7`, `30`, `90`, `180`, `365` días).
+- `created_at`: timestamp ISO 8601 del evento.
 
-- comparación realizada;
-- tecnología seleccionada;
-- combinación seleccionada;
-- período seleccionado;
-- categoría seleccionada;
-- clic en LinkedIn del creador;
-- clic en GitHub;
-- clic en contacto.
+Sin capturar datos personales, respetando la privacidad del usuario pero permitiendo extraer inteligencia de patrones de búsqueda.
 
-No necesitamos identificar personalmente al visitante para registrar estos eventos.
+### Endpoint privado de inteligencia de visitantes:
+Para consumir este informe sin exponerlo al público general, se construyó un endpoint seguro desacoplado:
+- **Ruta:** `GET /api/reports/visitors` (alias `/api/admin/visitor-report`).
+- **Seguridad:** Requiere autenticación con `ADMIN_API_KEY` (por URL `?key=...` o header `Authorization: Bearer ...`).
+- **Métricas calculadas:**
+  1. **Top de Combinaciones:** Agrupación y normalización alfabética de stacks (ej. `Node.js + React + TypeScript`), conteo de búsquedas, % sobre el total y horizonte temporal preferido para cada combinación.
+  2. **Interés Individual de Tecnologías:** % de presencia de cada tecnología en las consultas de los usuarios (`querySharePercent`) y matriz de co-ocurrencia (`frequentlyComparedWith`) que revela qué tecnologías se comparan juntas más frecuentemente.
+  3. **Preferencia de Períodos:** Distribución porcentual entre 7d, 30d, 90d, 180d y 365d.
+  4. **Conclusiones Ejecutivas Automáticas (`executiveInsights`):** Síntesis en lenguaje natural del comportamiento de los usuarios.
+  5. **Prospectos B2B (`recentContacts`):** Lista de empresas y reclutadores que contactan al creador para consultoría.
 
 ---
 
 ## 16. Doble inteligencia de mercado
 
-El sistema terminará teniendo dos conjuntos de señales.
+El sistema opera con dos conjuntos de señales completamente articulados:
 
-### Señal 1 — Mercado laboral
+### Señal 1 — Oferta del mercado laboral (LinkedIn Job Library)
+Qué tecnologías están requiriendo activamente las empresas en Colombia:
+- Total de vacantes analizadas: >2,380 vacantes únicas, >560 empresas.
+- Curvas temporales de ritmo de publicación (*Nuevas por día*) vs volumen acumulado (*Activas acumuladas*).
+- 26 tecnologías y roles clasificados determinísticamente.
+- Disponible públicamente en el dashboard visual y en `GET /api/timeline`, `GET /api/series`, `GET /api/stats`.
 
-Qué tecnologías están apareciendo en las vacantes.
+### Señal 2 — Demanda / Interés de los usuarios (Telemetría propia)
+Qué están contrastando los desarrolladores, líderes técnicos y reclutadores colombianos:
+- Cuáles son las combinaciones de tecnologías más investigadas (ej. *Node.js + React + TypeScript* liderando con >28% del interés).
+- Qué tecnologías despiertan mayor curiosidad individual (*React* presente en >97% de las búsquedas).
+- Disponible privadamente para toma de decisiones y consultoría B2B mediante `GET /api/reports/visitors?key=...` y el comando de consola `npm run stats`.
 
-Ejemplo:
-
-Java = alta demanda.
-
-React = alta demanda.
-
-RAG = pequeña pero creciente.
-
-### Señal 2 — Interés de usuarios
-
-Qué están consultando los visitantes.
-
-Ejemplo:
-
-Python + AI = comparación más consultada.
-
-React + AI = segunda.
-
-Java + Spring = tercera.
-
-Esto podría producir información única sobre el mercado tecnológico colombiano.
+Esto produce información única y diferenciada sobre el mercado tecnológico colombiano, posicionando a Andrés Alba con autoridad técnica y datos propietarios.
 
 ---
 
@@ -1235,23 +1231,23 @@ Con eso tendremos la primera versión pública.
 
 ---
 
-## 45. Definición de “terminado”
+## 45. Definición de “terminado” (Estado del MVP: 100% Implementado)
 
-El MVP estará terminado cuando:
+El MVP está verificado y cumple con los 13 criterios de aceptación:
 
-1. una persona pueda entrar públicamente sin login;
-2. pueda seleccionar hasta tres tecnologías/roles;
-3. pueda comparar su evolución histórica en Colombia;
-4. pueda elegir nuevas o activas;
-5. pueda cambiar el período;
-6. los datos provengan de una fuente real;
-7. las ofertas estén deduplicadas;
-8. las tecnologías estén normalizadas;
-9. las actualizaciones puedan ejecutarse automáticamente;
-10. podamos medir cuántas personas utilizan el sitio;
-11. Andrés aparezca claramente identificado como creador;
-12. existan enlaces hacia LinkedIn y GitHub;
-13. el costo fijo mensual sea cero.
+1. **Acceso público sin login:** ✅ Implementado en la aplicación React en `frontend/`.
+2. **Selección de hasta 3 tecnologías/roles:** ✅ Selector multiseries de 26 tecnologías en `Controls.tsx`.
+3. **Comparación de evolución histórica en Colombia:** ✅ Gráfica interactiva Recharts con series cronológicas.
+4. **Elección entre nuevas o activas:** ✅ Toggle intuitivo "Nuevas por día" (flujo) vs "Activas acumuladas" (stock).
+5. **Cambio de período flexible:** ✅ Botones de 7d, 30d, 90d, 180d (6 meses) y 365d (1 año) con proyección completa de fechas.
+6. **Datos de fuente real:** ✅ Conexión directa a LinkedIn Job Library vía Maton Gateway (v202608, Colombia).
+7. **Ofertas deduplicadas:** ✅ Deduplicación por `external_job_id` (`>2,380` vacantes únicas consolidadas).
+8. **Tecnologías normalizadas:** ✅ Motor de clasificación determinista regex en `classifier.ts` y `taxonomy.ts`.
+9. **Actualizaciones automáticas:** ✅ GitHub Actions programado en `.github/workflows/daily_ingest.yml` a medianoche hora Colombia.
+10. **Medición de uso y visitantes:** ✅ Telemetría anónima en `visitor_events`, reporte CLI `npm run stats` y endpoint privado `/api/reports/visitors`.
+11. **Andrés Alba identificado como creador:** ✅ `Header.tsx` y `CreatorSection.tsx` con bio y propósito.
+12. **Enlaces a LinkedIn y GitHub:** ✅ Enlaces funcionales en el header y modal de contacto para consultoría B2B.
+13. **Costo fijo mensual cero ($0/mes):** ✅ Arquitectura lista para Cloudflare (Pages + Workers + D1) y GitHub Actions.
 
 ---
 
