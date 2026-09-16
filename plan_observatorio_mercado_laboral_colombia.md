@@ -471,16 +471,55 @@ Cada interacción en el dashboard registra en la tabla `visitor_events` (SQLite 
 
 Sin capturar datos personales, respetando la privacidad del usuario pero permitiendo extraer inteligencia de patrones de búsqueda.
 
-### Endpoint privado de inteligencia de visitantes:
-Para consumir este informe sin exponerlo al público general, se construyó un endpoint seguro desacoplado:
-- **Ruta:** `GET /api/reports/visitors` (alias `/api/admin/visitor-report`).
-- **Seguridad:** Requiere autenticación con `ADMIN_API_KEY` (por URL `?key=...` o header `Authorization: Bearer ...`).
-- **Métricas calculadas:**
-  1. **Top de Combinaciones:** Agrupación y normalización alfabética de stacks (ej. `Node.js + React + TypeScript`), conteo de búsquedas, % sobre el total y horizonte temporal preferido para cada combinación.
-  2. **Interés Individual de Tecnologías:** % de presencia de cada tecnología en las consultas de los usuarios (`querySharePercent`) y matriz de co-ocurrencia (`frequentlyComparedWith`) que revela qué tecnologías se comparan juntas más frecuentemente.
-  3. **Preferencia de Períodos:** Distribución porcentual entre 7d, 30d, 90d, 180d y 365d.
-  4. **Conclusiones Ejecutivas Automáticas (`executiveInsights`):** Síntesis en lenguaje natural del comportamiento de los usuarios.
-  5. **Prospectos B2B (`recentContacts`):** Lista de empresas y reclutadores que contactan al creador para consultoría.
+### Endpoint privado de analítica de visitantes
+
+ColObs expone un endpoint privado que permite que otros proyectos, scripts o dashboards consulten la actividad registrada por el observatorio.
+
+**Base URL de producción:**
+
+`https://colobs.colobs.workers.dev`
+
+**Endpoint:**
+
+`GET /api/admin/analytics`
+
+URL completa:
+
+`https://colobs.colobs.workers.dev/api/admin/analytics`
+
+### Autenticación
+
+El endpoint requiere la variable secreta `ADMIN_API_KEY`.
+
+La autenticación se realiza mediante el header HTTP:
+
+`Authorization: Bearer <ADMIN_API_KEY>`
+
+La clave nunca debe almacenarse directamente en código fuente ni subirse a GitHub.
+
+En un proyecto consumidor se recomienda guardarla como variable de entorno, por ejemplo:
+
+`COLOBS_ADMIN_API_KEY`
+
+### Ejemplo desde TypeScript / JavaScript
+
+```ts
+const response = await fetch(
+  'https://colobs.colobs.workers.dev/api/admin/analytics',
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.COLOBS_ADMIN_API_KEY}`,
+    },
+  }
+);
+
+if (!response.ok) {
+  throw new Error(`ColObs API error: ${response.status}`);
+}
+
+const analytics = await response.json();
+
+console.log(analytics);
 
 ---
 
