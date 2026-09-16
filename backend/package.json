@@ -9,7 +9,8 @@
     "test:conn": "tsx scripts/test_maton_connection.ts",
     "test:jobs": "tsx scripts/test_linkedin_jobs.ts",
     "test:classifier": "tsx scripts/test_classifier.ts",
-    "ingest": "tsx scripts/run_ingestion.ts"
+    "ingest": "tsx scripts/run_ingestion.ts",
+    "stats": "tsx scripts/show_stats.ts"
   },
   "keywords": [
     "observatorio",
