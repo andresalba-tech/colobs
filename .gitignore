@@ -30,3 +30,5 @@ npm-debug.log*
 .dev.vars*
 
 backend/data/d1-import.sql
+
+backend/data/daily-d1.sql
