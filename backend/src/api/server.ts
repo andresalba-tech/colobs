@@ -34,6 +34,35 @@ export const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // 1.1 Resumen general de analíticas de mercado y visitantes
+    if (pathname === '/api/stats' && req.method === 'GET') {
+      const totalJobs = (db.prepare('SELECT COUNT(*) as c FROM jobs').get() as any)?.c || 0;
+      const totalCompanies = (db.prepare('SELECT COUNT(DISTINCT company) as c FROM jobs').get() as any)?.c || 0;
+      const dateRange = db.prepare('SELECT MIN(published_date) as min_d, MAX(published_date) as max_d FROM jobs').get() as any;
+      const totalEvents = (db.prepare('SELECT COUNT(*) as c FROM visitor_events').get() as any)?.c || 0;
+      const totalContacts = (db.prepare('SELECT COUNT(*) as c FROM visitor_contacts').get() as any)?.c || 0;
+
+      const topTech = db.prepare(`
+        SELECT t.name, t.slug, t.category, COUNT(jt.job_id) as total
+        FROM technologies t
+        JOIN job_technologies jt ON t.id = jt.technology_id
+        GROUP BY t.id
+        ORDER BY total DESC
+        LIMIT 10
+      `).all();
+
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        totalJobs,
+        totalCompanies,
+        dateRange: { start: dateRange?.min_d, end: dateRange?.max_d },
+        visitorInteractions: totalEvents,
+        leadsReceived: totalContacts,
+        topTechnologies: topTech
+      }));
+      return;
+    }
+
     // 2. Lista de tecnologías disponibles
     if (pathname === '/api/series' && req.method === 'GET') {
       const series = getAvailableSeries();
