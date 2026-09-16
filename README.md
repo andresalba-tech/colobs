@@ -21,6 +21,10 @@ https://colobs.colobs.workers.dev
 
 No login or account is required.
 
+### Demo
+
+![ColObs dashboard demo](./docs/demo.gif)
+
 ---
 
 ## What ColObs Does
