@@ -18,6 +18,20 @@ export default {
       });
     }
 
+    if (url.pathname === '/api/series' && request.method === 'GET') {
+        const result = await env.colobs_db
+            .prepare(`
+            SELECT id, name, slug, category
+            FROM technologies
+            ORDER BY name ASC
+            `)
+            .all();
+
+        return Response.json({
+            series: result.results,
+        });
+    }
+
     return Response.json(
       { error: 'Endpoint no encontrado' },
       { status: 404 }
