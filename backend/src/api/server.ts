@@ -2,8 +2,10 @@ import http from 'node:http';
 import { URL, fileURLToPath } from 'node:url';
 import { db, initDatabase } from '../db/database';
 import { getAvailableSeries, getTimelineData, getSeriesCardSummary } from './analytics';
+import { getVisitorAnalyticsReport } from './visitor_reports';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'colobs_secret_2026';
 
 // Inicializar BD
 initDatabase();
@@ -138,6 +140,31 @@ export const server = http.createServer(async (req, res) => {
 
       res.writeHead(201);
       res.end(JSON.stringify({ success: true, message: 'Contacto registrado correctamente' }));
+      return;
+    }
+
+    // 7. Informe privado y exhaustivo de analíticas de visitantes y combinaciones
+    if ((pathname === '/api/admin/visitor-report' || pathname === '/api/reports/visitors') && req.method === 'GET') {
+      const providedToken =
+        reqUrl.searchParams.get('token') ||
+        reqUrl.searchParams.get('key') ||
+        req.headers.authorization?.replace(/^Bearer\s+/i, '') ||
+        (req.headers['x-admin-token'] as string);
+
+      if (!providedToken || providedToken !== ADMIN_API_KEY) {
+        res.writeHead(401);
+        res.end(
+          JSON.stringify({
+            error: 'No autorizado',
+            message: 'Se requiere una clave válida para acceder al informe de analíticas. Use ?key=tu_clave o header Authorization: Bearer tu_clave',
+          })
+        );
+        return;
+      }
+
+      const report = getVisitorAnalyticsReport();
+      res.writeHead(200);
+      res.end(JSON.stringify(report, null, 2));
       return;
     }
 
