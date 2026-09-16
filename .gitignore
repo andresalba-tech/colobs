@@ -25,3 +25,6 @@ backend/data/*.db
 # Logs
 *.log
 npm-debug.log*
+
+.wrangler/
+.dev.vars*
