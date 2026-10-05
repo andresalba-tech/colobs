@@ -14,28 +14,9 @@ const MATON_GATEWAY_URL =
 
 const OUTPUT_PATH = path.resolve('backend/data/daily-d1.sql');
 
-const KEYWORDS = [
-  'Software',
-  'React',
-  'Python',
-  'Java',
-  'JavaScript',
-  'TypeScript',
-  'Node.js',
-  'AI Engineer',
-  'Full Stack',
-  'Frontend',
-  'Backend',
-  'Angular',
-  'Vue',
-  'Spring',
-  'FastAPI',
-  'Django',
-  'LLM',
-  'RAG',
-  'Agents',
-  '.NET',
-];
+import { INGESTION_KEYWORDS } from '../src/classifier/keywords';
+
+const KEYWORDS = INGESTION_KEYWORDS;
 
 const PAGE_SIZE = 24;
 const MAX_PAGES_PER_KEYWORD = 10;

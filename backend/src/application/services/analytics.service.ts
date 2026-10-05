@@ -7,6 +7,7 @@ import {
   TimelineDataPoint,
   SeriesSummary,
 } from '../../core/types.js';
+import { parseSeriesSlugs } from '../../core/analytics_math.js';
 
 export class AnalyticsService {
   constructor(
@@ -19,12 +20,7 @@ export class AnalyticsService {
   }
 
   parseSlugs(seriesParam: string | null): string[] {
-    const raw = seriesParam || 'react,python,java';
-    return raw
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 3);
+    return parseSeriesSlugs(seriesParam);
   }
 
   getTimelineData(

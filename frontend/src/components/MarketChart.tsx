@@ -20,7 +20,7 @@ interface MarketChartProps {
   isLoading: boolean;
 }
 
-const SERIES_COLORS = ['#38bdf8', '#a855f7', '#10b981'];
+import { SERIES_COLORS } from '../constants';
 
 export const MarketChart: React.FC<MarketChartProps> = ({
   data,

@@ -1,28 +1,8 @@
 import { runIngestion } from '../src/ingestion/ingest';
+import { INGESTION_KEYWORDS } from '../src/classifier/keywords';
 
 async function main() {
-  const keywords = [
-    'Software',
-    'React',
-    'Python',
-    'Java',
-    'JavaScript',
-    'TypeScript',
-    'Node.js',
-    'AI Engineer',
-    'Full Stack',
-    'Frontend',
-    'Backend',
-    'Angular',
-    'Vue',
-    'Spring',
-    'FastAPI',
-    'Django',
-    'LLM',
-    'RAG',
-    'Agents',
-    '.NET',
-  ];
+  const keywords = INGESTION_KEYWORDS;
 
   console.log('🌟 Iniciando carga histórica masiva para Colombia...');
   console.log(`Palabras clave a consultar: ${keywords.length}`);

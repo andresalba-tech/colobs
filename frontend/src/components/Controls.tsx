@@ -23,7 +23,7 @@ const PERIOD_OPTIONS: PeriodOption[] = [
   { label: '1 año', days: 365 },
 ];
 
-const SERIES_COLORS = ['#38bdf8', '#a855f7', '#10b981'];
+import { SERIES_COLORS } from '../constants';
 
 interface StackPreset {
   label: string;

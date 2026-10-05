@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { IAnalyticsRepository } from '../../core/interfaces/repositories.js';
 import { TimelineDataPoint, SeriesSummary } from '../../core/types.js';
+import { calculateDateIntervals, calculatePercentageChange } from '../../core/analytics_math.js';
 
 export class SqliteAnalyticsRepository implements IAnalyticsRepository {
   constructor(private readonly db: DatabaseSync) {}
@@ -13,35 +14,7 @@ export class SqliteAnalyticsRepository implements IAnalyticsRepository {
     if (slugs.length === 0) return [];
 
     const maxDateRow = this.db.prepare('SELECT MAX(published_date) as max_date FROM jobs').get() as { max_date: string | null } | undefined;
-    const maxDateStr = maxDateRow?.max_date || new Date().toISOString().slice(0, 10);
-    const maxDate = new Date(maxDateStr + 'T00:00:00Z');
-
-    const stepDays = days > 180 ? 5 : days > 90 ? 2 : 1;
-
-    interface DateInterval {
-      labelDate: string;
-      startDate: string;
-      endDate: string;
-    }
-
-    const intervals: DateInterval[] = [];
-
-    for (let i = days; i >= 0; i -= stepDays) {
-      const endOffset = i;
-      const startOffset = Math.min(days, i + stepDays - 1);
-
-      const dEnd = new Date(maxDate.getTime() - endOffset * 24 * 60 * 60 * 1000);
-      const dStart = new Date(maxDate.getTime() - startOffset * 24 * 60 * 60 * 1000);
-
-      const endDateStr = dEnd.toISOString().slice(0, 10);
-      const startDateStr = dStart.toISOString().slice(0, 10);
-
-      intervals.push({
-        labelDate: endDateStr,
-        startDate: startDateStr,
-        endDate: endDateStr,
-      });
-    }
+    const intervals = calculateDateIntervals(maxDateRow?.max_date, days);
 
     const techMap = new Map<string, number>();
     for (const slug of slugs) {
@@ -119,12 +92,7 @@ export class SqliteAnalyticsRepository implements IAnalyticsRepository {
           AND j.published_date >= date((SELECT MAX(published_date) FROM jobs), '-' || (? * 2) || ' days')
       `).get(tech.id, days, days) as any)?.count) || 0;
 
-    let changePercent = 0;
-    if (previousPeriodNew > 0) {
-      changePercent = Math.round(((currentPeriodNew - previousPeriodNew) / previousPeriodNew) * 1000) / 10;
-    } else if (currentPeriodNew > 0) {
-      changePercent = 100.0;
-    }
+    const changePercent = calculatePercentageChange(currentPeriodNew, previousPeriodNew);
 
     return {
       slug: tech.slug,

@@ -28,43 +28,13 @@ export interface TechnologyRecord {
   category: string;
 }
 
-export const DEFAULT_TECHNOLOGIES = [
-  // Lenguajes
-  { name: 'JavaScript', slug: 'javascript', category: 'language' },
-  { name: 'TypeScript', slug: 'typescript', category: 'language' },
-  { name: 'Python', slug: 'python', category: 'language' },
-  { name: 'Java', slug: 'java', category: 'language' },
-  { name: 'C#', slug: 'csharp', category: 'language' },
-  { name: 'Go', slug: 'go', category: 'language' },
-  { name: 'Rust', slug: 'rust', category: 'language' },
+import { TAXONOMY_RULES } from '../classifier/taxonomy.js';
 
-  // Frontend
-  { name: 'React', slug: 'react', category: 'frontend' },
-  { name: 'Next.js', slug: 'nextjs', category: 'frontend' },
-  { name: 'Angular', slug: 'angular', category: 'frontend' },
-  { name: 'Vue', slug: 'vue', category: 'frontend' },
-
-  // Backend
-  { name: 'Node.js', slug: 'nodejs', category: 'backend' },
-  { name: 'FastAPI', slug: 'fastapi', category: 'backend' },
-  { name: 'Django', slug: 'django', category: 'backend' },
-  { name: 'Spring', slug: 'spring', category: 'backend' },
-  { name: '.NET', slug: 'dotnet', category: 'backend' },
-
-  // IA / AI Engineering
-  { name: 'AI Engineer', slug: 'ai-engineer', category: 'ai' },
-  { name: 'Generative AI', slug: 'generative-ai', category: 'ai' },
-  { name: 'LLM', slug: 'llm', category: 'ai' },
-  { name: 'RAG', slug: 'rag', category: 'ai' },
-  { name: 'Agents', slug: 'agents', category: 'ai' },
-  { name: 'LangChain', slug: 'langchain', category: 'ai' },
-
-  // Roles
-  { name: 'Frontend', slug: 'frontend-role', category: 'role' },
-  { name: 'Backend', slug: 'backend-role', category: 'role' },
-  { name: 'Full Stack', slug: 'full-stack-role', category: 'role' },
-  { name: 'Software Engineer', slug: 'software-engineer-role', category: 'role' },
-];
+export const DEFAULT_TECHNOLOGIES = TAXONOMY_RULES.map((t) => ({
+  name: t.name,
+  slug: t.slug,
+  category: t.category,
+}));
 
 function initDefaultTechnologies() {
   const insertStmt = db.prepare(`

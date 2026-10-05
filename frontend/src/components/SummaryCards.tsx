@@ -7,7 +7,7 @@ interface SummaryCardsProps {
   periodDays: number;
 }
 
-const SERIES_COLORS = ['#38bdf8', '#a855f7', '#10b981'];
+import { SERIES_COLORS } from '../constants';
 
 export const SummaryCards: React.FC<SummaryCardsProps> = ({ summaries, periodDays }) => {
   if (summaries.length === 0) return null;

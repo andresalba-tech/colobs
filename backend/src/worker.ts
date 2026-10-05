@@ -1,3 +1,9 @@
+import {
+  calculateDateIntervals,
+  calculatePercentageChange,
+  parseSeriesSlugs,
+} from './core/analytics_math.js';
+
 interface Env {
   colobs_db: any;
   ADMIN_API_KEY: string;
@@ -38,11 +44,7 @@ export default {
         const metric = (url.searchParams.get('metric') as 'new' | 'active') || 'new';
         const days = parseInt(url.searchParams.get('days') || '30', 10);
 
-        const slugs = seriesParam
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .slice(0, 3);
+        const slugs = parseSeriesSlugs(seriesParam);
 
         if (slugs.length === 0) {
             return Response.json({ series: [], metric, days, data: [] });
@@ -52,37 +54,7 @@ export default {
             .prepare('SELECT MAX(published_date) AS max_date FROM jobs')
             .first<{ max_date: string | null }>();
 
-        const maxDateStr =
-            maxDateRow?.max_date || new Date().toISOString().slice(0, 10);
-
-        const maxDate = new Date(`${maxDateStr}T00:00:00Z`);
-
-        const stepDays = days > 180 ? 5 : days > 90 ? 2 : 1;
-
-        const intervals: Array<{
-            labelDate: string;
-            startDate: string;
-            endDate: string;
-        }> = [];
-
-        for (let i = days; i >= 0; i -= stepDays) {
-            const endOffset = i;
-            const startOffset = Math.min(days, i + stepDays - 1);
-
-            const dEnd = new Date(
-            maxDate.getTime() - endOffset * 24 * 60 * 60 * 1000
-            );
-
-            const dStart = new Date(
-            maxDate.getTime() - startOffset * 24 * 60 * 60 * 1000
-            );
-
-            intervals.push({
-            labelDate: dEnd.toISOString().slice(0, 10),
-            startDate: dStart.toISOString().slice(0, 10),
-            endDate: dEnd.toISOString().slice(0, 10),
-            });
-        }
+        const intervals = calculateDateIntervals(maxDateRow?.max_date, days);
 
         const techMap = new Map<string, number>();
 
@@ -151,11 +123,7 @@ export default {
         const seriesParam = url.searchParams.get('series') || 'react,python,java';
         const days = parseInt(url.searchParams.get('days') || '30', 10);
 
-        const slugs = seriesParam
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .slice(0, 3);
+        const slugs = parseSeriesSlugs(seriesParam);
 
         const summaries = [];
 
@@ -223,17 +191,7 @@ export default {
             const currentPeriodNew = currentPeriodRow?.count ?? 0;
             const previousPeriodNew = previousPeriodRow?.count ?? 0;
 
-            let changePercent = 0;
-
-            if (previousPeriodNew > 0) {
-            changePercent =
-                Math.round(
-                ((currentPeriodNew - previousPeriodNew) / previousPeriodNew) *
-                    1000
-                ) / 10;
-            } else if (currentPeriodNew > 0) {
-            changePercent = 100;
-            }
+            const changePercent = calculatePercentageChange(currentPeriodNew, previousPeriodNew);
 
             summaries.push({
             slug: tech.slug,
