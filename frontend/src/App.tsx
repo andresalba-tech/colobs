@@ -5,21 +5,59 @@ import { MarketChart } from './components/MarketChart';
 import { SummaryCards } from './components/SummaryCards';
 import { CreatorSection } from './components/CreatorSection';
 import { ContactModal } from './components/ContactModal';
+import { ArchitectureModal } from './components/ArchitectureModal';
 import { Technology, MetricType, TimelineDataPoint, SeriesSummary } from './types';
 
+function getInitialStateFromUrl() {
+  if (typeof window === 'undefined') {
+    return { slugs: ['react', 'python', 'java'], metric: 'new' as MetricType, period: 30 };
+  }
+  const params = new URLSearchParams(window.location.search);
+  const seriesParam = params.get('series');
+  const metricParam = params.get('metric');
+  const daysParam = params.get('days');
+
+  const slugs = seriesParam
+    ? seriesParam.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean).slice(0, 3)
+    : ['react', 'python', 'java'];
+  const metric: MetricType = metricParam === 'active' ? 'active' : 'new';
+  const period = daysParam && [7, 30, 90, 180, 365].includes(parseInt(daysParam, 10))
+    ? parseInt(daysParam, 10)
+    : 30;
+
+  return {
+    slugs: slugs.length > 0 ? slugs : ['react', 'python', 'java'],
+    metric,
+    period,
+  };
+}
+
 export function App() {
+  const initial = getInitialStateFromUrl();
   const [technologies, setTechnologies] = useState<Technology[]>([]);
-  const [selectedSlugs, setSelectedSlugs] = useState<string[]>(['react', 'python', 'java']);
-  const [selectedMetric, setSelectedMetric] = useState<MetricType>('new');
-  const [selectedPeriod, setSelectedPeriod] = useState<number>(30);
+  const [selectedSlugs, setSelectedSlugs] = useState<string[]>(initial.slugs);
+  const [selectedMetric, setSelectedMetric] = useState<MetricType>(initial.metric);
+  const [selectedPeriod, setSelectedPeriod] = useState<number>(initial.period);
 
   const [timelineData, setTimelineData] = useState<TimelineDataPoint[]>([]);
   const [summaries, setSummaries] = useState<SeriesSummary[]>([]);
-  const [totalJobs, setTotalJobs] = useState<number>(90);
+  const [totalJobs, setTotalJobs] = useState<number>(2381);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isContactOpen, setIsContactOpen] = useState<boolean>(false);
+  const [isArchitectureOpen, setIsArchitectureOpen] = useState<boolean>(false);
 
-  // 1. Cargar catálogo de tecnologías y conteo de vacantes al montar
+  // 1. Sincronizar estado en la URL (Deep-Linking para compartir)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams();
+    params.set('series', selectedSlugs.join(','));
+    params.set('metric', selectedMetric);
+    params.set('days', String(selectedPeriod));
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [selectedSlugs, selectedMetric, selectedPeriod]);
+
+  // 2. Cargar catálogo de tecnologías y conteo de vacantes al montar
   useEffect(() => {
     async function fetchInitialData() {
       try {
@@ -35,7 +73,7 @@ export function App() {
 
         if (healthRes.ok) {
           const hData = await healthRes.json();
-          setTotalJobs(hData.jobsStored || 90);
+          setTotalJobs(hData.jobsStored || 2381);
         }
       } catch (err) {
         console.error('Error cargando catálogo inicial:', err);
@@ -45,7 +83,7 @@ export function App() {
     fetchInitialData();
   }, []);
 
-  // 2. Cargar datos del gráfico y tarjetas cuando cambien los filtros
+  // 3. Cargar datos del gráfico y tarjetas cuando cambien los filtros
   useEffect(() => {
     if (selectedSlugs.length === 0) return;
 
@@ -111,15 +149,22 @@ export function App() {
 
   const handleAddSeries = () => {
     if (selectedSlugs.length >= 3) return;
-    // Buscar una tecnología no seleccionada aún
     const available = technologies.find((t) => !selectedSlugs.includes(t.slug));
     const newSlug = available ? available.slug : 'ai-engineer';
     setSelectedSlugs([...selectedSlugs, newSlug]);
   };
 
+  const handleApplyPreset = (slugs: string[]) => {
+    setSelectedSlugs(slugs);
+  };
+
   return (
     <div className="app-container">
-      <Header onOpenContact={() => setIsContactOpen(true)} totalJobsInDb={totalJobs} />
+      <Header
+        onOpenContact={() => setIsContactOpen(true)}
+        onOpenArchitecture={() => setIsArchitectureOpen(true)}
+        totalJobsInDb={totalJobs}
+      />
 
       <main>
         <Controls
@@ -128,6 +173,7 @@ export function App() {
           onSelectSeries={handleSelectSeries}
           onRemoveSeries={handleRemoveSeries}
           onAddSeries={handleAddSeries}
+          onApplyPreset={handleApplyPreset}
           selectedMetric={selectedMetric}
           onChangeMetric={setSelectedMetric}
           selectedPeriod={selectedPeriod}
@@ -144,11 +190,16 @@ export function App() {
 
         <SummaryCards summaries={summaries} periodDays={selectedPeriod} />
 
-        <CreatorSection onOpenContact={() => setIsContactOpen(true)} />
+        <CreatorSection
+          onOpenContact={() => setIsContactOpen(true)}
+          onOpenArchitecture={() => setIsArchitectureOpen(true)}
+        />
       </main>
 
       <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+      <ArchitectureModal isOpen={isArchitectureOpen} onClose={() => setIsArchitectureOpen(false)} />
     </div>
   );
 }
+
 export default App;

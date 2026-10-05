@@ -1,8 +1,9 @@
 import React from 'react';
-import { Mail, Database } from 'lucide-react';
+import { Mail, Database, Cpu } from 'lucide-react';
 
 interface CreatorSectionProps {
   onOpenContact: () => void;
+  onOpenArchitecture?: () => void;
 }
 
 const LinkedinIcon = () => (
@@ -19,7 +20,7 @@ const GithubIcon = () => (
   </svg>
 );
 
-export const CreatorSection: React.FC<CreatorSectionProps> = ({ onOpenContact }) => {
+export const CreatorSection: React.FC<CreatorSectionProps> = ({ onOpenContact, onOpenArchitecture }) => {
   return (
     <div
       style={{
@@ -41,8 +42,7 @@ export const CreatorSection: React.FC<CreatorSectionProps> = ({ onOpenContact })
             Andrés Alba
           </h3>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '1.25rem' }}>
-            Senior Full-Stack & AI Engineer focused on modern web applications and applied AI systems, including LLM applications,
-            RAG, agentic systems and high-impact AI-powered products.
+            Senior Full-Stack & AI Engineer enfocado en aplicaciones web de alto rendimiento, sistemas de datos y soluciones de IA aplicada (LLMs, RAG, arquitecturas agénticas y productos cloud-native).
           </p>
         </div>
 
@@ -62,6 +62,7 @@ export const CreatorSection: React.FC<CreatorSectionProps> = ({ onOpenContact })
               fontSize: '0.825rem',
               fontWeight: 600,
               border: '1px solid rgba(56, 189, 248, 0.25)',
+              transition: 'all 0.15s',
             }}
           >
             <LinkedinIcon />
@@ -69,7 +70,7 @@ export const CreatorSection: React.FC<CreatorSectionProps> = ({ onOpenContact })
           </a>
 
           <a
-            href="https://github.com"
+            href="https://github.com/andresalba-tech"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -83,6 +84,7 @@ export const CreatorSection: React.FC<CreatorSectionProps> = ({ onOpenContact })
               fontSize: '0.825rem',
               fontWeight: 600,
               border: '1px solid var(--border-color)',
+              transition: 'all 0.15s',
             }}
           >
             <GithubIcon />
@@ -102,6 +104,8 @@ export const CreatorSection: React.FC<CreatorSectionProps> = ({ onOpenContact })
               fontSize: '0.825rem',
               fontWeight: 600,
               border: '1px solid var(--border-color)',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
             }}
           >
             <Mail size={15} />
@@ -120,18 +124,40 @@ export const CreatorSection: React.FC<CreatorSectionProps> = ({ onOpenContact })
             LinkedIn Promoted Jobs — Colombia
           </h3>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '0.75rem' }}>
-            El observatorio <strong>no afirma</strong> medir la totalidad absoluta de empleos en Colombia, sino una muestra
-            altamente consistente y verificada: <em>las ofertas promocionadas activas en LinkedIn Job Library</em>.
+            El observatorio analiza una muestra altamente consistente y verificada: <em>las ofertas promocionadas activas en la biblioteca de LinkedIn Colombia</em>.
           </p>
           <p style={{ fontSize: '0.825rem', color: 'var(--text-subtle)', lineHeight: '1.5' }}>
-            El propósito central es estudiar <strong>tendencias relativas y proporciones tecnológicas</strong> a lo largo del tiempo,
-            permitiendo tomar decisiones profesionales basadas en datos reales y no en percepciones casuales.
+            El objetivo es estudiar <strong>tendencias relativas y proporciones tecnológicas</strong> a lo largo del tiempo,
+            permitiendo tomar decisiones profesionales y de contratación basadas en evidencia de mercado.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-subtle)', fontSize: '0.75rem', marginTop: '1rem' }}>
-          <Database size={14} />
-          <span>Ingestión continua y normalización determinista con SQLite y Cloudflare D1.</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-subtle)', fontSize: '0.75rem' }}>
+            <Database size={14} />
+            <span>Ingestión idempotente en SQLite y Cloudflare D1.</span>
+          </div>
+
+          {onOpenArchitecture && (
+            <button
+              onClick={onOpenArchitecture}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.75rem',
+                color: 'var(--color-series-0)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                padding: 0,
+              }}
+            >
+              <Cpu size={13} />
+              <span>Ver Arquitectura E2E →</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

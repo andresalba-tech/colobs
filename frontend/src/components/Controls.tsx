@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Technology, MetricType, PeriodOption } from '../types';
-import { Layers, Calendar, Filter, X } from 'lucide-react';
+import { Layers, Calendar, Filter, X, Zap, Share2, Check } from 'lucide-react';
 
 interface ControlsProps {
   technologies: Technology[];
@@ -8,6 +8,7 @@ interface ControlsProps {
   onSelectSeries: (index: number, slug: string) => void;
   onRemoveSeries: (index: number) => void;
   onAddSeries: () => void;
+  onApplyPreset: (slugs: string[]) => void;
   selectedMetric: MetricType;
   onChangeMetric: (metric: MetricType) => void;
   selectedPeriod: number;
@@ -24,17 +25,34 @@ const PERIOD_OPTIONS: PeriodOption[] = [
 
 const SERIES_COLORS = ['#38bdf8', '#a855f7', '#10b981'];
 
+interface StackPreset {
+  label: string;
+  slugs: string[];
+  tooltip: string;
+}
+
+const STACK_PRESETS: StackPreset[] = [
+  { label: 'Frontend Battle', slugs: ['react', 'angular', 'vue'], tooltip: 'React vs Angular vs Vue' },
+  { label: 'Backend Heavyweights', slugs: ['python', 'java', 'dotnet'], tooltip: 'Python vs Java vs .NET' },
+  { label: 'Modern Languages', slugs: ['typescript', 'go', 'rust'], tooltip: 'TypeScript vs Go vs Rust' },
+  { label: 'AI Engineering Boom', slugs: ['ai-engineer', 'llm', 'langchain'], tooltip: 'AI Eng vs LLM vs LangChain' },
+  { label: 'Full Stack Web', slugs: ['react', 'nodejs', 'python'], tooltip: 'React vs Node.js vs Python' },
+];
+
 export const Controls: React.FC<ControlsProps> = ({
   technologies,
   selectedSlugs,
   onSelectSeries,
   onRemoveSeries,
   onAddSeries,
+  onApplyPreset,
   selectedMetric,
   onChangeMetric,
   selectedPeriod,
   onChangePeriod,
 }) => {
+  const [copied, setCopied] = useState(false);
+
   // Agrupar tecnologías por categoría para los selects
   const categories: Record<string, { label: string; items: Technology[] }> = {
     language: { label: 'Lenguajes', items: [] },
@@ -50,6 +68,17 @@ export const Controls: React.FC<ControlsProps> = ({
     }
   });
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const isPresetActive = (presetSlugs: string[]) => {
+    if (presetSlugs.length !== selectedSlugs.length) return false;
+    return presetSlugs.every((slug) => selectedSlugs.includes(slug));
+  };
+
   return (
     <div
       className="card"
@@ -60,7 +89,96 @@ export const Controls: React.FC<ControlsProps> = ({
         gap: '1.25rem',
       }}
     >
-      {/* Fila superior: Selectores de Series (hasta 3) */}
+      {/* Barra de Presets Populares (UX Senior / 1-Click Comparison) */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          paddingBottom: '0.75rem',
+          borderBottom: '1px solid var(--border-color)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <span
+            style={{
+              fontSize: '0.775rem',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              fontWeight: 600,
+            }}
+          >
+            <Zap size={13} color="#f59e0b" />
+            Stack Battles Rápidos:
+          </span>
+
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {STACK_PRESETS.map((preset) => {
+              const active = isPresetActive(preset.slugs);
+              return (
+                <button
+                  key={preset.label}
+                  onClick={() => onApplyPreset(preset.slugs)}
+                  title={preset.tooltip}
+                  style={{
+                    fontSize: '0.75rem',
+                    padding: '0.25rem 0.6rem',
+                    borderRadius: '6px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: active ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-elevated)',
+                    color: active ? '#38bdf8' : 'var(--text-muted)',
+                    border: `1px solid ${active ? '#38bdf866' : 'var(--border-color)'}`,
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseOver={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.color = '#fff';
+                      e.currentTarget.style.borderColor = 'var(--border-highlight)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.color = 'var(--text-muted)';
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                    }
+                  }}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Botón de Compartir Vista / Deep-Linking */}
+        <button
+          onClick={handleCopyLink}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            fontSize: '0.75rem',
+            padding: '0.3rem 0.65rem',
+            borderRadius: '6px',
+            background: copied ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+            color: copied ? '#10b981' : 'var(--text-muted)',
+            border: `1px solid ${copied ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-color)'}`,
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+          }}
+          title="Copiar URL con los filtros actuales para compartir esta comparativa exacta"
+        >
+          {copied ? <Check size={12} /> : <Share2 size={12} />}
+          <span>{copied ? '¡Enlace copiado!' : 'Compartir vista'}</span>
+        </button>
+      </div>
+
+      {/* Fila: Selectores de Series (hasta 3) */}
       <div>
         <div
           style={{
@@ -97,6 +215,7 @@ export const Controls: React.FC<ControlsProps> = ({
                 borderRadius: '4px',
                 fontWeight: 600,
                 border: '1px solid rgba(56, 189, 248, 0.25)',
+                cursor: 'pointer',
               }}
             >
               + Añadir serie
@@ -173,6 +292,9 @@ export const Controls: React.FC<ControlsProps> = ({
                     justifyContent: 'center',
                     padding: '2px',
                     borderRadius: '4px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
                   }}
                   onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
                   onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-subtle)')}
@@ -197,7 +319,7 @@ export const Controls: React.FC<ControlsProps> = ({
           borderTop: '1px solid var(--border-color)',
         }}
       >
-        {/* Selector de Métrica con Explicación Clara */}
+        {/* Selector de Métrica */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
           <span
             style={{
@@ -235,6 +357,8 @@ export const Controls: React.FC<ControlsProps> = ({
                 flexDirection: 'column',
                 alignItems: 'center',
                 lineHeight: 1.2,
+                border: 'none',
+                cursor: 'pointer',
               }}
             >
               <span>Nuevas por día</span>
@@ -257,6 +381,8 @@ export const Controls: React.FC<ControlsProps> = ({
                 flexDirection: 'column',
                 alignItems: 'center',
                 lineHeight: 1.2,
+                border: 'none',
+                cursor: 'pointer',
               }}
             >
               <span>Activas acumuladas</span>
@@ -302,6 +428,8 @@ export const Controls: React.FC<ControlsProps> = ({
                   background: selectedPeriod === opt.days ? 'var(--border-highlight)' : 'transparent',
                   color: selectedPeriod === opt.days ? '#fff' : 'var(--text-muted)',
                   transition: 'all 0.15s ease',
+                  border: 'none',
+                  cursor: 'pointer',
                 }}
               >
                 {opt.label}
