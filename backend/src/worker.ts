@@ -40,7 +40,7 @@ export default {
     }
 
     if (url.pathname === '/api/timeline' && request.method === 'GET') {
-        const seriesParam = url.searchParams.get('series') || 'react,python,java';
+        const seriesParam = url.searchParams.get('series');
         const metric = (url.searchParams.get('metric') as 'new' | 'active') || 'new';
         const days = parseInt(url.searchParams.get('days') || '30', 10);
 
@@ -120,7 +120,7 @@ export default {
         }
 
     if (url.pathname === '/api/summary' && request.method === 'GET') {
-        const seriesParam = url.searchParams.get('series') || 'react,python,java';
+        const seriesParam = url.searchParams.get('series');
         const days = parseInt(url.searchParams.get('days') || '30', 10);
 
         const slugs = parseSeriesSlugs(seriesParam);

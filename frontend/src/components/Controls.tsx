@@ -32,11 +32,11 @@ interface StackPreset {
 }
 
 const STACK_PRESETS: StackPreset[] = [
+  { label: 'Full Stack + AI Agents', slugs: ['react', 'nodejs', 'agents'], tooltip: 'React vs Node.js vs Agents' },
   { label: 'Frontend Battle', slugs: ['react', 'angular', 'vue'], tooltip: 'React vs Angular vs Vue' },
   { label: 'Backend Heavyweights', slugs: ['python', 'java', 'dotnet'], tooltip: 'Python vs Java vs .NET' },
   { label: 'Modern Languages', slugs: ['typescript', 'go', 'rust'], tooltip: 'TypeScript vs Go vs Rust' },
   { label: 'AI Engineering Boom', slugs: ['ai-engineer', 'llm', 'langchain'], tooltip: 'AI Eng vs LLM vs LangChain' },
-  { label: 'Full Stack Web', slugs: ['react', 'nodejs', 'python'], tooltip: 'React vs Node.js vs Python' },
 ];
 
 export const Controls: React.FC<ControlsProps> = ({

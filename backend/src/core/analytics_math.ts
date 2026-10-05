@@ -4,11 +4,13 @@ export interface DateInterval {
   endDate: string;
 }
 
+export const DEFAULT_SERIES_PARAM = 'react,nodejs,agents';
+
 /**
- * Parsea y normaliza la lista de slugs de tecnologías (ej. "react,python,java" -> ["react", "python", "java"])
+ * Parsea y normaliza la lista de slugs de tecnologías (ej. "react,nodejs,agents" -> ["react", "nodejs", "agents"])
  */
 export function parseSeriesSlugs(param: string | null | undefined, max: number = 3): string[] {
-  const raw = param || 'react,python,java';
+  const raw = param || DEFAULT_SERIES_PARAM;
   return raw
     .split(',')
     .map((s) => s.trim().toLowerCase())

@@ -7,10 +7,11 @@ import { CreatorSection } from './components/CreatorSection';
 import { ContactModal } from './components/ContactModal';
 import { ArchitectureModal } from './components/ArchitectureModal';
 import { Technology, MetricType, TimelineDataPoint, SeriesSummary } from './types';
+import { DEFAULT_SERIES } from './constants';
 
 function getInitialStateFromUrl() {
   if (typeof window === 'undefined') {
-    return { slugs: ['react', 'python', 'java'], metric: 'new' as MetricType, period: 30 };
+    return { slugs: DEFAULT_SERIES, metric: 'new' as MetricType, period: 30 };
   }
   const params = new URLSearchParams(window.location.search);
   const seriesParam = params.get('series');
@@ -19,14 +20,14 @@ function getInitialStateFromUrl() {
 
   const slugs = seriesParam
     ? seriesParam.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean).slice(0, 3)
-    : ['react', 'python', 'java'];
+    : DEFAULT_SERIES;
   const metric: MetricType = metricParam === 'active' ? 'active' : 'new';
   const period = daysParam && [7, 30, 90, 180, 365].includes(parseInt(daysParam, 10))
     ? parseInt(daysParam, 10)
     : 30;
 
   return {
-    slugs: slugs.length > 0 ? slugs : ['react', 'python', 'java'],
+    slugs: slugs.length > 0 ? slugs : DEFAULT_SERIES,
     metric,
     period,
   };
