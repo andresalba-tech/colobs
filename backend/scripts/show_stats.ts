@@ -1,4 +1,4 @@
-import { db, initDatabase } from '../src/db/database';
+import { db, initDatabase } from '../src/db/database.js';
 
 initDatabase();
 

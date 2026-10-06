@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { db, initDatabase, getAllTechnologies } from '../db/database';
-import { classifyJobText } from '../classifier/classifier';
+import { db, initDatabase, getAllTechnologies } from '../db/database.js';
+import { classifyJobText } from '../classifier/classifier.js';
 
 const MATON_API_KEY = process.env.MATON_API_KEY;
 const LINKEDIN_VERSION = process.env.LINKEDIN_VERSION || '202608';

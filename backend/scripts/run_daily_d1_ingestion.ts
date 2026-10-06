@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
-import { classifyJobText } from '../src/classifier/classifier';
+import { classifyJobText } from '../src/classifier/classifier.js';
 
 dotenv.config({
   path: path.resolve('backend/.env'),
@@ -14,7 +14,7 @@ const MATON_GATEWAY_URL =
 
 const OUTPUT_PATH = path.resolve('backend/data/daily-d1.sql');
 
-import { INGESTION_KEYWORDS } from '../src/classifier/keywords';
+import { INGESTION_KEYWORDS } from '../src/classifier/keywords.js';
 
 const KEYWORDS = INGESTION_KEYWORDS;
 
@@ -208,7 +208,7 @@ async function main() {
           publishedDate,
           description: details.jobDescription || '',
           technologies: new Set(
-            matches.map((match) => match.slug)
+            matches.map((match: { slug: string }) => match.slug)
           ),
         });
       }

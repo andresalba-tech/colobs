@@ -1,4 +1,4 @@
-import { db } from '../db/database';
+import { db } from '../db/database.js';
 
 export interface TechNameMap {
   [slug: string]: { name: string; category: string };

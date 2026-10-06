@@ -51,7 +51,6 @@ router.get('/api/summary', analyticsController.getSummary);
 router.post('/api/events', visitorController.recordEvent);
 router.post('/api/contact', visitorController.recordContact);
 router.get('/api/admin/visitor-report', visitorController.getVisitorReport);
-router.get('/api/reports/visitors', visitorController.getVisitorReport);
 
 // 4. Instancia del servidor HTTP nativo
 export const server = http.createServer((req, res) => {

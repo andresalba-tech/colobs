@@ -4,8 +4,19 @@ import {
   parseSeriesSlugs,
 } from './core/analytics_math.js';
 
+interface D1PreparedStatement {
+  bind(...values: any[]): D1PreparedStatement;
+  first<T = any>(): Promise<T | null>;
+  all<T = any>(): Promise<{ results: T[] }>;
+  run(): Promise<any>;
+}
+
+interface D1Database {
+  prepare(query: string): D1PreparedStatement;
+}
+
 interface Env {
-  colobs_db: any;
+  colobs_db: D1Database;
   ADMIN_API_KEY: string;
 }
 

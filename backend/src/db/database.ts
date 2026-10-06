@@ -50,7 +50,3 @@ function initDefaultTechnologies() {
 export function getAllTechnologies(): TechnologyRecord[] {
   return db.prepare('SELECT id, name, slug, category FROM technologies ORDER BY name ASC').all() as any;
 }
-
-export function getTechnologyBySlug(slug: string): TechnologyRecord | undefined {
-  return db.prepare('SELECT id, name, slug, category FROM technologies WHERE slug = ?').get(slug) as any;
-}

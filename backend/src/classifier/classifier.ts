@@ -1,4 +1,4 @@
-import { TAXONOMY_RULES, TechRule } from './taxonomy';
+import { TAXONOMY_RULES } from './taxonomy.js';
 
 export interface ClassifiedResult {
   slug: string;
@@ -15,7 +15,7 @@ export function classifyJobText(title: string, description: string): ClassifiedR
 
   for (const rule of TAXONOMY_RULES) {
     // Verificar si coincide con alguno de los patrones de inclusión
-    const matchesPattern = rule.patterns.some((pat) => pat.test(fullText));
+    const matchesPattern = rule.patterns.some((pat: RegExp) => pat.test(fullText));
 
     if (matchesPattern) {
       // Si la regla tiene exclusiones específicas
@@ -28,7 +28,7 @@ export function classifyJobText(title: string, description: string): ClassifiedR
             continue;
           }
         } else {
-          const isExcluded = rule.excludePatterns.some((ex) => ex.test(fullText));
+          const isExcluded = rule.excludePatterns.some((ex: RegExp) => ex.test(fullText));
           if (isExcluded) {
             continue;
           }
@@ -36,7 +36,7 @@ export function classifyJobText(title: string, description: string): ClassifiedR
       }
 
       // Detectar si aparece específicamente en el título
-      const matchedInTitle = rule.patterns.some((pat) => pat.test(titleText));
+      const matchedInTitle = rule.patterns.some((pat: RegExp) => pat.test(titleText));
 
       results.push({
         slug: rule.slug,

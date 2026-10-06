@@ -14,7 +14,6 @@ export interface IJobsRepository {
 
 export interface ITechnologyRepository {
   getAll(): TechnologyRecord[];
-  getBySlug(slug: string): TechnologyRecord | undefined;
 }
 
 export interface IAnalyticsRepository {

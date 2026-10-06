@@ -18,16 +18,9 @@ export interface HttpResponse {
 }
 
 export type RouteHandler = (ctx: RequestContext) => Promise<HttpResponse | void> | HttpResponse | void;
-export type Middleware = (ctx: RequestContext) => Promise<HttpResponse | void> | HttpResponse | void;
 
 export class Router {
   private routes: Map<string, RouteHandler> = new Map();
-  private middlewares: Middleware[] = [];
-
-  use(middleware: Middleware): this {
-    this.middlewares.push(middleware);
-    return this;
-  }
 
   get(path: string, handler: RouteHandler): this {
     this.routes.set(`GET:${path}`, handler);
@@ -91,15 +84,6 @@ export class Router {
         headers: req.headers,
         body,
       };
-
-      // Run global middlewares
-      for (const middleware of this.middlewares) {
-        const mwResult = await middleware(ctx);
-        if (mwResult && typeof mwResult === 'object' && 'statusCode' in mwResult) {
-          this.sendResponse(res, mwResult);
-          return;
-        }
-      }
 
       // Route lookup
       const routeKey = `${method}:${pathname}`;

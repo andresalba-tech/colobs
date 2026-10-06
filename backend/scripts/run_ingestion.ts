@@ -1,5 +1,5 @@
-import { runIngestion } from '../src/ingestion/ingest';
-import { INGESTION_KEYWORDS } from '../src/classifier/keywords';
+import { runIngestion } from '../src/ingestion/ingest.js';
+import { INGESTION_KEYWORDS } from '../src/classifier/keywords.js';
 
 async function main() {
   const keywords = INGESTION_KEYWORDS;

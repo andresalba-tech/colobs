@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { classifyJobText } from '../src/classifier/classifier';
+import { classifyJobText } from '../src/classifier/classifier.js';
 
 async function testClassifierOnSamples() {
   console.log('=== Probando Motor de Clasificación sobre Muestras Reales ===\n');
@@ -20,7 +20,7 @@ async function testClassifierOnSamples() {
       const desc = el.jobDetails?.jobDescription || '';
 
       const matches = classifyJobText(title, desc);
-      const matchNames = matches.map((m) => m.name + (m.matchedInTitle ? '*' : '')).join(', ');
+      const matchNames = matches.map((m: { name: string; matchedInTitle: boolean }) => m.name + (m.matchedInTitle ? '*' : '')).join(', ');
 
       console.log(`  [${i + 1}] "${title}"`);
       console.log(`      Empresa: ${el.jobDetails?.organizationName}`);
